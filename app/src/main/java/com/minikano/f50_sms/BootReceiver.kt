@@ -7,6 +7,7 @@ import android.util.Log
 import com.minikano.f50_sms.configs.AppMeta
 import com.minikano.f50_sms.utils.DeviceModelChecker
 import com.minikano.f50_sms.utils.KanoUtils
+import com.minikano.f50_sms.utils.ShellKano
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,6 +47,8 @@ class BootReceiver : BroadcastReceiver() {
             startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startForegroundService(startIntent)
             Log.d("UFI_TOOLS_LOG", "启动WebService")
+            ShellKano.runADB(context.applicationContext)
+            context.startForegroundService(Intent(context, ADBService::class.java))
 
         }
     }

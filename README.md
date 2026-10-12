@@ -2,10 +2,10 @@
 
 This custom build is based on upstream commit `cf83b815efb114ed026f06dc90550845aafbfceb`.
 See [PRIVACY_BUILD.md](PRIVACY_BUILD.md) for changes, build instructions and limitations.
-Package: `com.minikano.f50_sms.privacy`; version: `4.1.5-privacy.1`.
+Package: `com.minikano.f50_sms.privacy`; version: `4.1.5-privacy.2`.
 The separate package preserves any upstream app and its data. Updates are manual.
 The upstream README and MIT attribution below are retained as historical documentation;
-its automatic updates, plugins, reporting and advanced startup features do not describe this fork.
+its reporting and automatic upstream APK installation do not describe this fork.
 
 ---
 

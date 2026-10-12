@@ -638,14 +638,21 @@ class KanoUtils {
                     outFile.mkdirs()
                     copyAssetsRecursively(context, fullAssetPath, outFile)
                 } else {
-                    // 是文件，复制
-                    assetManager.open(fullAssetPath).use { input ->
-                        FileOutputStream(outFile).use { output ->
-                            input.copyTo(output)
+                    // Replace atomically so restarting the service does not overwrite
+                    // the inode of an already running bundled adb/iperf executable.
+                    val stagingFile = File(destDir, ".$fileName.new")
+                    try {
+                        assetManager.open(fullAssetPath).use { input ->
+                            FileOutputStream(stagingFile).use { output ->
+                                input.copyTo(output)
+                            }
                         }
+                        stagingFile.setExecutable(true)
+                        stagingFile.setReadable(true)
+                        check(stagingFile.renameTo(outFile)) { "Could not replace bundled asset $fileName" }
+                    } finally {
+                        stagingFile.delete()
                     }
-                    outFile.setExecutable(true)
-                    outFile.setReadable(true)
                 }
             }
         }
@@ -904,7 +911,7 @@ class KanoUtils {
                     putString(PREF_WAKELOCK, "unlock")
                 }
                 if (!existing.containsKey(PREF_POWER_STATUS_FORWARD)) {
-                    putString(PREF_POWER_STATUS_FORWARD, "1")
+                    putString(PREF_POWER_STATUS_FORWARD, "0")
                 }
 
             }

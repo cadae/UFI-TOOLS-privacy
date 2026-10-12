@@ -5,6 +5,8 @@ import com.minikano.f50_sms.ADBService
 import com.minikano.f50_sms.utils.KanoLog
 import com.minikano.f50_sms.modules.BASE_TAG
 import com.minikano.f50_sms.modules.PREFS_NAME
+import com.minikano.f50_sms.utils.ShellKano
+import com.minikano.f50_sms.utils.ShellKano.Companion
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -74,20 +76,71 @@ fun Route.adbModule(context: Context) {
         }
     }
 
-    // Network ADB is unavailable in the local-only build, including saved settings.
+    //获取网络ADB自启状态
     get("/api/adb_wifi_setting") {
-        call.respondText(
-            """{"enabled":false,"available":false}""",
-            ContentType.Application.Json
-        )
+        try {
+            val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val adbIpEnabled = sharedPrefs.getString("ADB_IP_ENABLED", "false")
+
+            call.respondText(
+                """{"enabled":$adbIpEnabled}""",
+                ContentType.Application.Json
+            )
+        } catch (e: Exception) {
+            KanoLog.d(TAG, "获取网络adb信息出错： ${e.message}")
+
+            call.respondText(
+                """{"error":"获取网络adb信息失败"}""",
+                ContentType.Application.Json,
+                HttpStatusCode.InternalServerError
+            )
+        }
     }
 
+    //修改网络ADB自启状态
     post("/api/adb_wifi_setting") {
-        call.respondText(
-            """{"error":"Automatic network ADB is disabled in this local-only build"}""",
-            ContentType.Application.Json,
-            HttpStatusCode.Gone
-        )
+        try {
+            // 获取 JSON Body
+            val body = call.receiveText()
+            val json = JSONObject(body)
+
+            val enabled = json.optBoolean("enabled", false)
+            val password = json.optString("password", "")
+
+            KanoLog.d(TAG, "ADB auto-start setting changed: enabled=$enabled")
+
+            val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+            // 保存配置
+            if (enabled) {
+                sharedPrefs.edit(commit = true) {
+                    if (password.isNotBlank()) putString("ADMIN_PWD", password)
+                    putString("ADB_IP_ENABLED", "true")
+                }
+            } else {
+                sharedPrefs.edit(commit = true) {
+                    putString("ADB_IP_ENABLED", "false")
+                }
+            }
+
+            if (enabled) ShellKano.runADB(context.applicationContext)
+            context.startForegroundService(android.content.Intent(context, ADBService::class.java))
+
+            // 响应
+            call.response.headers.append("Access-Control-Allow-Origin", "*")
+            call.respondText(
+                """{"result":"success","enabled":"$enabled"}""",
+                ContentType.Application.Json
+            )
+        } catch (e: Exception) {
+            KanoLog.d(TAG, "解析ADB_WIFI POST 请求出错：${e.message}")
+            call.response.headers.append("Access-Control-Allow-Origin", "*")
+            call.respondText(
+                """{"error":"参数解析失败"}""",
+                ContentType.Application.Json,
+                HttpStatusCode.InternalServerError
+            )
+        }
     }
 
     //网络ADB启动状态

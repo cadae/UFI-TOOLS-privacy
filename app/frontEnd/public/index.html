@@ -78,7 +78,7 @@
                                 onclick="createToast(t('please_login'),'red')">关机</button>
                             <button id="BG_SETTING" class="btn" data-i18n="bg_setting"
                                 onclick="createToast(t('please_login'),'red')">主题背景</button>
-                            <button id="PLUGIN_SETTING" disabled class="btn" data-i18n="privacy_plugins_disabled"
+                            <button id="PLUGIN_SETTING" class="btn" data-i18n="plugin_setting"
                                 onclick="createToast(t('please_login'),'red')">插件功能</button>
                             <div style="display: inline-block;position: relative;">
                                 <div class="tip" style="display: none;" id="UNREAD_SMS">0</div>
@@ -89,7 +89,7 @@
                                 data-i18n="data_usage_history_btn">流量历史</button>
                             <button id="SpeedTestBtn" class="btn" data-i18n="speed_test"
                                 onclick="showModal('#speedTestModal')">内网测速</button>
-                            <button id="CellularSpeedTestBtn" disabled class="btn" data-i18n="privacy_proxy_test_disabled"
+                            <button id="CellularSpeedTestBtn" class="btn" data-i18n="cellular_speed_test"
                                 onclick="createToast(t('please_login'),'red')">流量测速</button>
                             <button id="ClientManagement" class="btn" data-i18n="client_mgmt">接入设备</button>
                             <button id="WIFIManagement" class="btn" data-i18n="wifi_mgmt">WIFI设置</button>
@@ -108,9 +108,9 @@
                                 onclick="createToast(t('please_login'),'red')">文件共享</button>
                             <button id="ROAM" class="btn" data-i18n="network_roam"
                                 onclick="createToast(t('please_login'),'red')">网络漫游</button>
-                            <button id="smsForward" disabled class="btn" data-i18n="privacy_forward_disabled"
+                            <button id="smsForward" class="btn" data-i18n="sms_forward"
                                 onclick="createToast(t('please_login'),'red')">短信转发</button>
-                            <button id="ScheduledTaskManagement" disabled class="btn" data-i18n="privacy_tasks_disabled"
+                            <button id="ScheduledTaskManagement" class="btn" data-i18n="scheduled_task"
                                 onclick="createToast(t('please_login'),'red')">定时任务</button>
                             <button id="APNManagement" data-i18n="apn_setting" class="btn"
                                 onclick="createToast(t('please_login'),'red')">APN设置</button>
@@ -1259,9 +1259,8 @@
                             <input placeholder="输入网址" data-i18n-placeholder="bg_setting_input_url" type="text"
                                 id="BG_INPUT" style="flex:1;padding: 6px 10px;margin: 4px 0;">
                         </p>
-                        <p data-i18n="privacy_background_notice">背景仅支持内置图片路径或本地 PNG/JPEG/GIF/WebP/AVIF/BMP 图片数据。</p>
                         <label>
-                            <input id="fileUploader" accept="image/png,image/jpeg,image/gif,image/webp,image/avif,image/bmp" type="file" style="display: none;"
+                            <input id="fileUploader" type="file" style="display: none;"
                                 onchange="handleFileUpload(event)">
                             <button style="width: 100%;" onclick="document.querySelector('#fileUploader').click()"
                                 data-i18n="bg_setting_upload">上传图片(10MB内)</button>
@@ -1342,6 +1341,11 @@
                             <ul id="sortable-list" class="plugin-list"
                                 style="margin-top: 10px;display: flex;gap:6px;flex-wrap: wrap;font-size: 12px;">
                             </ul>
+                            <label style="display: block; font-size: 12px; margin: 10px 0;">
+                                <input type="checkbox" id="privacyCustomHeadOptIn" onchange="onCustomHeadOptInChange(event)">
+                                <span data-i18n="privacy_custom_head_opt_in">加载已保存的插件和自定义 HTML（需主动开启，下次刷新生效）</span>
+                            </label>
+                            <p style="font-size: 12px;" data-i18n="privacy_custom_head_notice">自定义内容可执行脚本或加载外部资源，请先审查保存的内容。</p>
                             <textarea disabled id="custom_head" placeholder="插件内容..."
                                 data-i18n-placeholder="plugin_modal_textarea_placeholder"
                                 style="display:none;font-size: 12px;font-family: monospace;margin: 6px 0;resize: vertical;width: 100%;box-sizing: border-box;"
@@ -1695,7 +1699,7 @@
                                             data-i18n="wake_lock_disabled">禁用唤醒锁</button>
                                         <button id="ADB" class="btn" data-i18n="usb_debugging"
                                             onclick="createToast(t('please_login'),'red')">USB调试</button>
-                                        <button id="ADB_NET" disabled class="btn" data-i18n="privacy_adb_autostart_disabled"
+                                        <button id="ADB_NET" class="btn" data-i18n="adb_autostart"
                                             onclick="createToast(t('please_login'),'red')">ADB自启</button>
                                         <button id="PERF" class="btn" data-i18n="performance_mode"
                                             onclick="createToast(t('please_login'),'red')">性能模式</button>
@@ -1863,8 +1867,7 @@
                 <div class="modal" style="width: 90%; max-width: 800px;">
                     <div class="title" data-i18n="privacy_update_title">UFI-TOOLS Privacy 更新</div>
                     <div class="content" style="margin: 15px 0; font-size: 12px;">
-                        <p><span data-i18n="privacy_current_version">当前隐私版</span>: 4.1.5-privacy.1</p>
-                        <p data-i18n="privacy_disabled_features">本隐私版禁用了插件、自定义脚本、短信转发、定时任务和外部代理测速。</p>
+                        <p><span data-i18n="privacy_current_version">当前隐私版</span>: 4.1.5-privacy.2</p>
                         <p data-i18n="privacy_update_notice">手动查看隐私分支发布记录；本界面不会自动检查、下载或安装 APK。</p>
                         <p><a href="https://github.com/cadae/UFI-TOOLS-privacy/releases" target="_blank"
                                 rel="noopener noreferrer" data-i18n="privacy_view_releases">查看隐私分支发布记录（GitHub）</a></p>
@@ -2279,7 +2282,7 @@
         </div>
     </div>
     <div class="footer">
-        <p>UFI-TOOLS Privacy 4.1.5-privacy.1 · <a href="https://github.com/cadae/UFI-TOOLS-privacy" target="_blank" rel="noopener noreferrer">Privacy fork</a></p>
+        <p>UFI-TOOLS Privacy 4.1.5-privacy.2 · <a href="https://github.com/cadae/UFI-TOOLS-privacy" target="_blank" rel="noopener noreferrer">Privacy fork</a></p>
         <p>Made by <a href="https://github.com/kanoqwq/UFI-TOOLS" target="_blank">MiniKano</a> with love ❤️&nbsp;<a
                 href="javascript:;" onclick="showModal('#payModal')" data-i18n="pay_title">打赏作者</a></p>
     </div>

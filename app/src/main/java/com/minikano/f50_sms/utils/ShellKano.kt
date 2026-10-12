@@ -534,8 +534,13 @@ class ShellKano {
             }
         }
 
-        // Local-only builds never connect to, restart or activate device network ADB.
-        fun ensureAdbAlive(context: Context): Boolean = false
+        // Probe/connect the existing local transport; do not kill the shared ADB server.
+        fun ensureAdbAlive(context: Context): Boolean {
+            val result = executeShellFromAssetsSubfolderWithArgs(context, "shell/adb", "devices", timeoutMs = 5_000)
+            if (result?.contains("localhost:5555\tdevice") == true) return true
+            val connected = executeShellFromAssetsSubfolderWithArgs(context, "shell/adb", "connect", "localhost", timeoutMs = 5_000)
+            return connected?.contains("connected to localhost:5555") == true
+        }
 
         fun executeShellFromAssetsSubfolder(
             context: Context,
@@ -575,8 +580,16 @@ class ShellKano {
         }
 
 
+        // Explicitly authorized network ADB: no vendor login, FOTA or Samba side effects.
         fun runADB(context: Context) {
-            KanoLog.d("UFI_TOOLS_LOG", "Automatic network ADB is disabled in this local-only build")
+            Thread {
+                try {
+                    runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
+                    runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
+                } catch (e: Exception) {
+                    KanoLog.w("UFI_TOOLS_LOG", "Network ADB property request failed: ${e.message}")
+                }
+            }.start()
         }
 
         fun openSMB (context: Context){

@@ -34,6 +34,17 @@ const originFetch = window.fetch;
         const t = Date.now();
         const method = (init.method || 'GET').toUpperCase();
 
+        //无感验证anyProxy
+        if (input.startsWith('/api/proxy')) {
+            let _token = common_headers.authorization
+            if (!_token) {
+                _token = localStorage.getItem('kano_sms_token')
+            }
+            if (_token) {
+                headers.set('authorization', _token)
+            }
+        }
+
         // 提取纯路径（不含 query）
         let urlPath = '';
         try {
@@ -521,6 +532,34 @@ async function adbKeepAlive() {
         return false
     }
 
+}
+
+//自定义头部
+const getCustomHead = async () => {
+    try {
+        const { text } = await (await fetchWithTimeout(`${KANO_baseURL}/get_custom_head`, {
+            headers: { ...common_headers }
+        })).json()
+        return text || ''
+    } catch (e) {
+        return '';
+    }
+}
+const setCustomHead = async (text = "") => {
+    try {
+        const { result, error } = await (await fetchWithTimeout(`${KANO_baseURL}/set_custom_head`, {
+            headers: { ...common_headers },
+            method: "POST",
+            body: JSON.stringify({
+                text: text
+            })
+        })).json()
+        return {
+            result, error
+        }
+    } catch (e) {
+        return false
+    }
 }
 
 //rootShell

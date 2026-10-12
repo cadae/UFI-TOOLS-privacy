@@ -54,14 +54,17 @@ fun isSafeHeader(header: String): Boolean {
 }
 
 val forbiddenDomains = listOf(
-    "ufi.ztedevice.com"
+    "ufi.ztedevice.com",
+    "api.kanokano.cn"
 )
 
 fun isForbiddenHost(targetUrl: String): Boolean {
     return try {
         val uri = URI(targetUrl)
-        val host = uri.host ?: return true
-        if (forbiddenDomains.any { it.equals(host, ignoreCase = true) }) {
+        val host = uri.host?.trimEnd('.') ?: return true
+        if (forbiddenDomains.any {
+                host.equals(it, ignoreCase = true) || host.endsWith(".$it", ignoreCase = true)
+            }) {
             return true
         }
         val addresses = InetAddress.getAllByName(host)

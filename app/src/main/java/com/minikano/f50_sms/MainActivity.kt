@@ -181,6 +181,10 @@ class MainActivity : ComponentActivity() {
                 if (!isServiceRunning(WebService::class.java)) {
                     startForegroundService(Intent(context, WebService::class.java))
                 }
+                ShellKano.runADB(applicationContext)
+                if (!isServiceRunning(ADBService::class.java)) {
+                    startForegroundService(Intent(context, ADBService::class.java))
+                }
 
                 // 注册广播
                 registerReceiver(
@@ -357,6 +361,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 sendBroadcast(Intent(UI_INTENT).putExtra("status", true))
                                 KanoLog.d("UFI_TOOLS_LOG", "user touched start btn")
+                                ShellKano.runADB(applicationContext)
                             }
                         )
                     }
@@ -544,6 +549,7 @@ fun InputUI(
                     Text("启动/Start", textAlign = TextAlign.Center)
                 }
                 Spacer(modifier = Modifier.height(10.dp))
+                OptionalFeaturePermissions()
                 HyperlinkText(
                     fullText = "Created by Minikano with ❤️ ver: $versionName",
                     linkText = "Minikano",
@@ -620,6 +626,7 @@ fun ServerUI(
                     Text("停止服务/Stop Server")
                 }
                 Spacer(modifier = Modifier.height(32.dp))
+                OptionalFeaturePermissions()
                 HyperlinkText(
                     fullText = "Created by Minikano with ❤️ ver: $versionName",
                     linkText = "Minikano",
@@ -694,4 +701,23 @@ fun HyperlinkText(
                 }
         }
     )
+}
+
+@Composable
+private fun OptionalFeaturePermissions() {
+    val context = LocalContext.current
+    Text("可选功能权限 / Optional feature permissions", fontSize = 12.sp)
+    TextButton(onClick = {
+        val activity = context as? android.app.Activity
+        if (activity != null && ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(activity, arrayOf(android.Manifest.permission.READ_SMS), 1919810)
+        }
+    }) {
+        Text("允许读取短信（转发需另行启用） / Allow SMS reading")
+    }
+    TextButton(onClick = {
+        context.startActivity(Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS))
+    }) {
+        Text("设置用量访问（流量统计） / Usage access settings")
+    }
 }

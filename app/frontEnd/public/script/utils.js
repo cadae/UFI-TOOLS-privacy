@@ -1,24 +1,3 @@
-// Privacy backgrounds may use bundled raster assets or local raster image data only.
-const getSafeLocalBackgroundUrl = (value) => {
-    if (typeof value !== 'string') return null
-    const input = value.trim()
-    if (!input || input.length > 14 * 1024 * 1024) return null
-    if (/^data:image\/(?:png|jpeg|gif|webp|avif|bmp);base64,[A-Za-z0-9+/]+={0,2}$/i.test(input)) {
-        return input
-    }
-    const bundledImages = new Set([
-        '/img/zsm.png', '/img/group.png', '/favicon.webp',
-        '/icons/icon-192.webp', '/icons/icon-512.webp'
-    ])
-    try {
-        const url = new URL(input, window.location.href)
-        if (url.origin !== window.location.origin || url.username || url.password || url.search || url.hash) return null
-        return bundledImages.has(url.pathname) ? url.pathname : null
-    } catch {
-        return null
-    }
-}
-
 const isArray = (raw) => {
     let parsed;
     try {
