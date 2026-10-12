@@ -16,15 +16,14 @@ import androidx.core.app.NotificationCompat
 import com.minikano.f50_sms.configs.AppMeta
 import com.minikano.f50_sms.utils.KanoLog
 import com.minikano.f50_sms.utils.KanoUtils
-import com.minikano.f50_sms.utils.UniqueDeviceIDManager
 import com.minikano.f50_sms.utils.WakeLock
 import kotlin.concurrent.thread
 
 class WebService : Service() {
     private var webServer: KanoWebServer? = null
     private val port = 2333
-    private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
-    private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
+    private val SERVER_INTENT = "${packageName}.SERVER_STATUS_CHANGED"
+    private val UI_INTENT = "${packageName}.UI_STATUS_CHANGED"
 
     @Volatile
     private var allowAutoStart = true
@@ -48,8 +47,6 @@ class WebService : Service() {
     override fun onCreate() {
         super.onCreate()
         AppMeta.init(this)
-        // Application 或 Activity 启动时调用一次初始化：
-        UniqueDeviceIDManager.init(this)
         startForegroundNotification()
 
         // Base PARTIAL_WAKE_LOCK 只由承载 Ktor 的核心服务持有。
@@ -91,15 +88,15 @@ class WebService : Service() {
                     return@synchronized
                 }
 
-                val currentIp = prefs.getString("gateway_ip", "0.0.0.0:8080") ?: "0.0.0.0:8080"
+                val currentIp = prefs.getString("gateway_ip", "192.168.0.1:8080") ?: "192.168.0.1:8080"
                 allowAutoStart = true
                 try {
-                    Log.d("UFI_TOOLS_LOG", "正在启动web服务，绑定地址：http://0.0.0.0:$port")
+                    Log.d("UFI_TOOLS_LOG", "正在启动web服务，绑定地址：http://192.168.0.1:$port")
                     val server = KanoWebServer(applicationContext, 2333, currentIp)
                     server.start()
                     webServer = server
                     sendStickyBroadcast(Intent(SERVER_INTENT).putExtra("status", true))
-                    Log.d("UFI_TOOLS_LOG", "启动服务成功，地址：http://0.0.0.0:$port")
+                    Log.d("UFI_TOOLS_LOG", "启动服务成功，地址：http://192.168.0.1:$port")
                 } catch (fallbackEx: Exception) {
                     webServer = null
                     Log.e("UFI_TOOLS_LOG", "服务启动失败: ${fallbackEx.message}")

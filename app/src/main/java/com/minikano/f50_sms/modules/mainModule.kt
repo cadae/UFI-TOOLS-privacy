@@ -3,15 +3,11 @@ package com.minikano.f50_sms.modules
 import android.content.Context
 import com.minikano.f50_sms.modules.adb.adbModule
 import com.minikano.f50_sms.modules.advanced.advancedToolsModule
-import com.minikano.f50_sms.modules.at.anyProxyModule
 import com.minikano.f50_sms.modules.at.atModule
 import com.minikano.f50_sms.modules.auth.authenticatedRoute
 import com.minikano.f50_sms.modules.config.configModule
 import com.minikano.f50_sms.modules.deviceInfo.baseDeviceInfoModule
 import com.minikano.f50_sms.modules.ota.otaModule
-import com.minikano.f50_sms.modules.plugins.pluginsModule
-import com.minikano.f50_sms.modules.scheduledTask.scheduledTaskModule
-import com.minikano.f50_sms.modules.smsForward.smsModule
 import com.minikano.f50_sms.modules.speedtest.speedTestModule
 import com.minikano.f50_sms.modules.theme.themeModule
 import io.ktor.server.application.Application
@@ -28,6 +24,8 @@ fun Application.mainModule(context: Context, proxyServerIp: String) {
     val targetServerIP = proxyServerIp  // 目标服务器地址
     val TAG = "[$BASE_TAG]_reverseProxyModule"
 
+    // This local-only build does not register external proxy, plugin download,
+    // SMS-forwarding or autonomous scheduled-action APIs.
     routing {
         // 静态资源
         staticFileModule(context)
@@ -36,7 +34,6 @@ fun Application.mainModule(context: Context, proxyServerIp: String) {
 
             configModule(context)
 
-            anyProxyModule(context)
 
             reverseProxyModule(targetServerIP)
 
@@ -52,13 +49,10 @@ fun Application.mainModule(context: Context, proxyServerIp: String) {
 
             otaModule(context)
 
-            smsModule(context)
 
-            scheduledTaskModule(context)
         }
 
         themeModule(context)
-        pluginsModule(context)
 
     }
 

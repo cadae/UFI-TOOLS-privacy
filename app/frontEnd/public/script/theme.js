@@ -179,7 +179,13 @@ const initTheme = async (sync = false) => {
 
         if (result) {
             Object.keys(result).forEach((key) => {
-                localStorage.setItem(key, result[key])
+                if (key === 'backgroundUrl') {
+                    const safeUrl = getSafeLocalBackgroundUrl(result[key])
+                    if (safeUrl) localStorage.setItem(key, safeUrl)
+                    else localStorage.removeItem(key)
+                } else {
+                    localStorage.setItem(key, result[key])
+                }
             })
         }
     }

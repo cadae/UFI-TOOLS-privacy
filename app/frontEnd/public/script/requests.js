@@ -4,7 +4,6 @@ function gsmEncode(text) { function encodeText(text) { let encoded = []; for (le
 let KANO_baseURL = '/api'
 let KANO_PASSWORD = null
 let KANO_TOKEN = null
-let ACCEPT_TERMS = false
 let KANO_COOKIE = null
 
 let loginMethod = localStorage.getItem('login_method') == "1" ? "1" : "0"; //1新方法，0旧方法
@@ -34,17 +33,6 @@ const originFetch = window.fetch;
         const headers = new Headers(init.headers || {});
         const t = Date.now();
         const method = (init.method || 'GET').toUpperCase();
-
-        //无感验证anyProxy
-        if (input.startsWith('/api/proxy')) {
-            let _token = common_headers.authorization
-            if (!_token) {
-                _token = localStorage.getItem('kano_sms_token')
-            }
-            if (_token) {
-                headers.set('authorization', _token)
-            }
-        }
 
         // 提取纯路径（不含 query）
         let urlPath = '';
@@ -535,34 +523,6 @@ async function adbKeepAlive() {
 
 }
 
-//自定义头部
-const getCustomHead = async () => {
-    try {
-        const { text } = await (await fetchWithTimeout(`${KANO_baseURL}/get_custom_head`, {
-            headers: { ...common_headers }
-        })).json()
-        return text || ''
-    } catch (e) {
-        return '';
-    }
-}
-const setCustomHead = async (text = "") => {
-    try {
-        const { result, error } = await (await fetchWithTimeout(`${KANO_baseURL}/set_custom_head`, {
-            headers: { ...common_headers },
-            method: "POST",
-            body: JSON.stringify({
-                text: text
-            })
-        })).json()
-        return {
-            result, error
-        }
-    } catch (e) {
-        return false
-    }
-}
-
 //rootShell
 const runShellWithRoot = async (cmd = '', timeout = 10000) => {
     try {
@@ -666,16 +626,6 @@ const switchAPNAuto = async ({ isAuto = true, index = 0 }) => {
     const data = isAuto ? formData : { ...formData, ...manualData }
     const res = await postData(await login(), data)
     return res.json()
-}
-
-// check Terms acceptance
-const getTermsAcceptance = async () => {
-    const res = await (await fetchWithTimeout(`${KANO_baseURL}/version_info`)).json()
-    ACCEPT_TERMS = res.accept_terms && res.accept_terms.toString() == 'true'
-    if (ACCEPT_TERMS) {
-        return true
-    }
-    return false
 }
 
 // check sim pin

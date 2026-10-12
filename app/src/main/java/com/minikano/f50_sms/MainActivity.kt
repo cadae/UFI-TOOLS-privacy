@@ -1,7 +1,6 @@
 package com.minikano.f50_sms
 
 import android.app.ActivityManager
-import android.app.AppOpsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -11,7 +10,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
-import android.provider.Settings
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -49,7 +47,6 @@ import com.minikano.f50_sms.utils.DeviceModelChecker
 import com.minikano.f50_sms.utils.KanoLog
 import com.minikano.f50_sms.utils.KanoUtils
 import com.minikano.f50_sms.utils.ShellKano
-import com.minikano.f50_sms.utils.UniqueDeviceIDManager
 import com.minikano.f50_sms.utils.WakeLock
 import com.minikano.f50_sms.utils.getBooleanCompat
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +60,6 @@ import com.minikano.f50_sms.configs.AppMeta.updateIsDefaultOrWeakToken
 class MainActivity : ComponentActivity() {
     companion object {
         const val REQUEST_CODE_NOTIFICATION = 114514
-        const val REQUEST_CODE_SMS = 1919810
     }
     private val port = 2333
     private val PREFS_NAME = "kano_ZTE_store"
@@ -74,22 +70,11 @@ class MainActivity : ComponentActivity() {
     private val PREF_ISDEBUG = "kano_is_debug"
     private val PREF_WAKELOCK = "wakeLock"
     private val serverStatusLiveData = MutableLiveData<Boolean>()
-    private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
-    private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
-    fun hasUsageAccessPermission(context: Context): Boolean {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            android.os.Process.myUid(),
-            context.packageName
-        )
-        return mode == AppOpsManager.MODE_ALLOWED
-    }
-
+    private val SERVER_INTENT = "${packageName}.SERVER_STATUS_CHANGED"
+    private val UI_INTENT = "${packageName}.UI_STATUS_CHANGED"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppMeta.init(this)
-        UniqueDeviceIDManager.init(this)
         val context = this
         val intent = getIntent()
         val isSilentStart = intent.getBooleanExtra("silent",false)
@@ -99,7 +84,6 @@ class MainActivity : ComponentActivity() {
 
         // 这里用协程异步调用
         lifecycleScope.launch {
-            UniqueDeviceIDManager.init(applicationContext)
 
             setContent {
                 Card(
@@ -174,7 +158,6 @@ class MainActivity : ComponentActivity() {
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Device id:${UniqueDeviceIDManager.getUUID()}", fontSize = 14.sp)
                             repeat(4) {
                                 Text("不受支持的设备！！", fontSize = 20.sp)
                                 Text("Unsupported device！！", fontSize = 20.sp)
@@ -189,21 +172,6 @@ class MainActivity : ComponentActivity() {
             } else {
                 requestNotificationPermissionIfNeeded()
 
-                // 忽略电池优化权限
-                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-                if (!powerManager.isIgnoringBatteryOptimizations(context.packageName)) {
-                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                    intent.data = Uri.parse("package:${context.packageName}")
-                    context.startActivity(intent)
-                }
-
-                //用户使用量权限
-                if (!hasUsageAccessPermission(context)) {
-                    val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                }
-
                 val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName
 
                 //每次启动时需要检测IP变动，适应用户ip网段更改
@@ -212,9 +180,6 @@ class MainActivity : ComponentActivity() {
                 //防止服务重复启动
                 if (!isServiceRunning(WebService::class.java)) {
                     startForegroundService(Intent(context, WebService::class.java))
-                }
-                if (!isServiceRunning(ADBService::class.java)) {
-                    startForegroundService(Intent(context, ADBService::class.java))
                 }
 
                 // 注册广播
@@ -392,13 +357,11 @@ class MainActivity : ComponentActivity() {
                                 }
                                 sendBroadcast(Intent(UI_INTENT).putExtra("status", true))
                                 KanoLog.d("UFI_TOOLS_LOG", "user touched start btn")
-                                runADB()
                             }
                         )
                     }
                 }
 
-                runADB()
 
                 if(isSilentStart) {
                     Toast.makeText(context, "UFI-TOOLS静默启动完成", Toast.LENGTH_SHORT).show()
@@ -419,61 +382,7 @@ class MainActivity : ComponentActivity() {
                 arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
                 REQUEST_CODE_NOTIFICATION
             )
-        } else {
-            requestSmsPermissionIfNeeded()
         }
-    }
-
-    private fun requestSmsPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_SMS)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.READ_SMS),
-                REQUEST_CODE_SMS
-            )
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == REQUEST_CODE_NOTIFICATION) {
-            requestSmsPermissionIfNeeded()
-        }
-        if (requestCode == REQUEST_CODE_SMS) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                KanoLog.d("权限", "短信权限已授予")
-            } else {
-                KanoLog.d("权限", "短信权限被拒绝")
-            }
-        }
-    }
-
-    private fun runADB() {
-        //网络adb
-        //adb setprop service.adb.tcp.port 5555
-        Thread {
-            try {
-                ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
-                ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
-                KanoLog.d("UFI_TOOLS_LOG", "网络adb调试执行成功")
-            } catch (e: Exception) {
-                try {
-                    ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
-                    ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
-                    KanoLog.d("UFI_TOOLS_LOG", "网络adb调试执行成功")
-                } catch (e: Exception) {
-                    KanoLog.d("UFI_TOOLS_LOG", "网络adb调试出错： ${e.message}")
-                }
-            }
-        }.start()
     }
 
     private val serverStatusReceiver = object : BroadcastReceiver() {

@@ -12,25 +12,19 @@ plugins {
 // 注册执行 npm 命令的任务
 val npmBuild by tasks.registering(Exec::class) {
     workingDir = file("frontEnd")
-    doFirst {
-        println("✅ 当前 workingDir: $workingDir")
-        println("✅ 系统平台: ${System.getProperty("os.name")}")
-        println("✅ 环境变量 PATH:")
-        println(System.getenv("PATH"))
-    }
     commandLine = if (System.getProperty("os.name").startsWith("Windows")) {
-        listOf("cmd", "/c", "npm", "run", "build")
+        listOf("cmd", "/c", "npm", "run", "debug")
     } else {
-        listOf("sh", "-c", "npm run build")
+        listOf("npm", "run", "debug")
     }
     group = "build"
-    description = "Build frontend assets using npm"
+    description = "Build inspectable frontend assets using npm (no obfuscation)"
 
     doFirst {
-        println("[Gradle] 开始执行 npm run build")
+        println("[Gradle] 开始执行 npm run debug")
     }
     doLast {
-        println("[Gradle] npm run build 完成")
+        println("[Gradle] npm run debug 完成")
     }
 }
 
@@ -52,12 +46,12 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.minikano.f50_sms"
+        applicationId = "com.minikano.f50_sms.privacy"
         minSdk = 26
         targetSdk = 33
-        // 动态生成 versionCode 为 yyyyMMdd 格式
-        versionCode = SimpleDateFormat("yyyyMMdd").format(Date()).toInt()
-        versionName = "4.1.5"
+        // Fixed identity for this reviewed privacy fork.
+        versionCode = 20261012
+        versionName = "4.1.5-privacy.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -152,5 +146,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    debugImplementation(libs.firebase.crashlytics.buildtools)
 }

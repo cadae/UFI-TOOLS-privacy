@@ -14,7 +14,6 @@ import android.os.StatFs
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import com.minikano.f50_sms.ADBService.Companion.isExecutingDisabledFOTA
 import com.minikano.f50_sms.modules.deviceInfo.MyStorageInfo
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
@@ -783,37 +782,9 @@ class KanoUtils {
             }
         }
 
-        fun disableFota(context: Context):Boolean{
-            if(isExecutingDisabledFOTA){
-                KanoLog.w("UFI_TOOLS_LOG", "禁用FOTA操作正在执行..无需重复执行")
-                return false
-            }
-            try {
-                isExecutingDisabledFOTA = true
-                // 复制依赖文件
-                val outFileAdb = copyFileToFilesDir(context, "shell/adb")
-                    ?: throw Exception("复制 adb 到 filesDir 失败")
-
-                // 设置执行权限
-                outFileAdb.setExecutable(true)
-
-                val cmds = listOf(
-                    "${outFileAdb.absolutePath} -s localhost shell pm disable-user --user 0 com.zte.zdm",
-                    "${outFileAdb.absolutePath} -s localhost shell pm uninstall -k --user 0 com.zte.zdm",
-                    "${outFileAdb.absolutePath} -s localhost shell pm uninstall -k --user 0 cn.zte.aftersale",
-                    "${outFileAdb.absolutePath} -s localhost shell pm uninstall -k --user 0 com.zte.zdmdaemon",
-                    "${outFileAdb.absolutePath} -s localhost shell pm uninstall -k --user 0 com.zte.zdmdaemon.install",
-                    "${outFileAdb.absolutePath} -s localhost shell pm uninstall -k --user 0 com.zte.analytics",
-                    "${outFileAdb.absolutePath} -s localhost shell pm uninstall -k --user 0 com.zte.neopush"
-                )
-
-                cmds.forEach{item->ShellKano.runShellCommand(item, context = context)}
-                return true
-            } catch (e:Exception){
-                return false
-            } finally {
-                isExecutingDisabledFOTA = false
-            }
+        fun disableFota(context: Context): Boolean {
+            KanoLog.w("UFI_TOOLS_LOG", "Vendor package changes are disabled in this local-only build")
+            return false
         }
 
         fun isWeakToken(token: String): Boolean {
@@ -1234,82 +1205,8 @@ class KanoUtils {
             }
         }
 
-        fun tryWakeAdbdViaAdvancedFunc(context: Context): Boolean {
-            val socketPath = File(context.filesDir, "kano_root_shell.sock")
-            if (!socketPath.exists()) {
-                return false
-            }
+        fun tryWakeAdbdViaAdvancedFunc(context: Context): Boolean = false
 
-            val currentUser = RootShell.sendCommandToSocket(
-                "whoami",
-                socketPath.absolutePath,
-                timeout = 2_000
-            )?.trim()
-            if (currentUser != "root") {
-                KanoLog.d("UFI_TOOLS_LOG", "高级功能 socket 当前不可用或不是 root")
-                return false
-            }
-
-            val result = RootShell.sendCommandToSocket(
-                """
-                    setprop service.adb.tcp.port 5555
-                    port_status=${'$'}?
-                    actual_port="${'$'}(getprop service.adb.tcp.port)"
-                    setprop ctl.restart adbd
-                    restart_status=${'$'}?
-                    printf 'KANO_ADBD_WAKE_STATUS=%s:%s:%s\n' "${'$'}port_status" "${'$'}restart_status" "${'$'}actual_port"
-                """.trimIndent(),
-                socketPath.absolutePath,
-                timeout = 3_000
-            ) ?: return false
-
-            val success = result.lineSequence().any {
-                it.trim() == "KANO_ADBD_WAKE_STATUS=0:0:5555"
-            }
-            if (success) {
-                KanoLog.d("UFI_TOOLS_LOG", "已通过高级功能提交 adbd 重启")
-            } else {
-                KanoLog.w("UFI_TOOLS_LOG", "高级功能唤醒 adbd 失败: $result")
-            }
-            return success
-        }
-
-        suspend fun waitAdvancedFuncAndWakeAdbd(context:Context, timeoutSeconds: Int = 60): Boolean{
-            val intervalMillis = 800L
-            val maxAttempts = timeoutSeconds * 1000 / intervalMillis
-
-            repeat(maxAttempts.toInt()) {
-                try {
-                    val socketPath = File(context.filesDir, "kano_root_shell.sock")
-                    val testResult =
-                        RootShell.sendCommandToSocket(
-                            "whoami",
-                            socketPath.absolutePath
-                        ) ?: "whoami执行失败"
-
-                    if (!socketPath.exists() || !testResult.contains("root")) {
-                        throw Exception("高级功能还没准备好")
-                    }
-
-                    KanoLog.d("UFI_TOOLS_LOG", "检测到高级功能已经打开，正在拉起adbd...")
-
-                    val result =
-                        RootShell.sendCommandToSocket(
-                            """setprop service.adb.tcp.port 5555
-                                          setprop ctl.restart adbd
-                                          """.trimIndent(),
-                            socketPath.absolutePath
-                        )
-
-                    KanoLog.d("UFI_TOOLS_LOG", "socat测试结果： $result")
-
-                    return result != null
-                } catch (e: Exception) {
-                    KanoLog.d("UFI_TOOLS_LOG", "高级功能等待异常: ${e.message}")
-                }
-                delay(intervalMillis)
-            }
-            return false
-        }
+        suspend fun waitAdvancedFuncAndWakeAdbd(context: Context, timeoutSeconds: Int = 60): Boolean = false
     }
 }

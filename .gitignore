@@ -34,3 +34,9 @@ app/frontEnd/node_modules/*
 # JVM 崩溃/回放日志，不应进仓库
 hs_err_pid*.log
 replay_pid*.log
+
+# Signing credentials and local verification products must never be published.
+*.keystore
+*.jks
+*.pem
+/verification-local/

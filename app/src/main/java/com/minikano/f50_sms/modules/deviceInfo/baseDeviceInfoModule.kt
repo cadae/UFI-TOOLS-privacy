@@ -7,7 +7,6 @@ import com.minikano.f50_sms.modules.BASE_TAG
 import com.minikano.f50_sms.modules.PREFS_NAME
 import com.minikano.f50_sms.utils.KanoLog
 import com.minikano.f50_sms.utils.KanoUtils
-import com.minikano.f50_sms.utils.UniqueDeviceIDManager
 import com.minikano.f50_sms.utils.getCpuUsageSnapshot
 import com.minikano.f50_sms.utils.getCpuFreqJson
 import com.minikano.f50_sms.utils.getMemoryUsageSnapshot
@@ -277,23 +276,13 @@ fun Route.baseDeviceInfoModule(context: Context) {
         }
     }
 
-    post("/api/accept_terms"){
-        try {
-            val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            AppMeta.isReadUseTerms = true
-            sharedPrefs.edit(commit = true) { putString("isReadUseTerms", "true") }
-            val jsonResult = """{"result":"success"}""".trimIndent()
-            call.response.headers.append("Access-Control-Allow-Origin", "*")
-            call.respondText(jsonResult, ContentType.Application.Json)
-        } catch (e: Exception) {
-            KanoLog.d("UFI_TOOLS_LOG", "获取用户协议信息出错：${e.message}")
-            call.response.headers.append("Access-Control-Allow-Origin", "*")
-            call.respondText(
-                """{"error":"获取用户协议信息出错"}""",
-                ContentType.Application.Json,
-                HttpStatusCode.InternalServerError
-            )
-        }
+    // Original upstream telemetry terms do not apply to this local-only build.
+    post("/api/accept_terms") {
+        call.respondText(
+            """{"error":"The upstream telemetry terms flow is removed from this build"}""",
+            ContentType.Application.Json,
+            HttpStatusCode.Gone
+        )
     }
 
     //设置昵称
@@ -329,8 +318,7 @@ fun Route.baseDeviceInfoModule(context: Context) {
                 "app_ver": "${AppMeta.versionName}",
                 "app_ver_code": "${AppMeta.versionCode}",
                 "model":"${AppMeta.model}",
-                "nickname":"${AppMeta.nickName}",
-                "accept_terms":${AppMeta.isReadUseTerms}
+                "nickname":"${AppMeta.nickName}"
             }
         """.trimIndent()
 
@@ -348,20 +336,11 @@ fun Route.baseDeviceInfoModule(context: Context) {
     }
 
     get("/api/device_id") {
-        try {
-            val jsonResult = """{"device_id": "${UniqueDeviceIDManager.getUUID()}"}""".trimIndent()
-
-            call.response.headers.append("Access-Control-Allow-Origin", "*")
-            call.respondText(jsonResult, ContentType.Application.Json)
-        } catch (e: Exception) {
-            KanoLog.d("UFI_TOOLS_LOG", "获取设备id出错：${e.message}")
-            call.response.headers.append("Access-Control-Allow-Origin", "*")
-            call.respondText(
-                """{"error":"获取设备id出错"}""",
-                ContentType.Application.Json,
-                HttpStatusCode.InternalServerError
-            )
-        }
+        call.respondText(
+            """{"error":"Device identifiers are disabled in this local-only build"}""",
+            ContentType.Application.Json,
+            HttpStatusCode.Gone
+        )
     }
 
     //SELinux状态

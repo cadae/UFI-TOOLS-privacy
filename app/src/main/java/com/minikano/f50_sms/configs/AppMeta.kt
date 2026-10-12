@@ -29,8 +29,6 @@ object AppMeta {
     var isDeviceRooted:Boolean = false
         private set
 
-    var isReadUseTerms:Boolean = false
-
     var isEnableLog:Boolean = false
         private set
 
@@ -186,8 +184,6 @@ object AppMeta {
 
             val socketPath = File(context.filesDir, "kano_root_shell.sock")
             isDeviceRooted = socketPath.exists()
-
-            isReadUseTerms = prefs.getString("isReadUseTerms", "false").toBoolean()
 
             isEnableLog = prefs.getBooleanCompat(PREF_ISDEBUG, false)
 

@@ -7,8 +7,6 @@ import android.util.Log
 import com.minikano.f50_sms.configs.AppMeta
 import com.minikano.f50_sms.utils.DeviceModelChecker
 import com.minikano.f50_sms.utils.KanoUtils
-import com.minikano.f50_sms.utils.ShellKano
-import com.minikano.f50_sms.utils.UniqueDeviceIDManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,7 +20,6 @@ class BootReceiver : BroadcastReceiver() {
             //初始化spf
             KanoUtils.initSharedPerfs(context)
             AppMeta.init(context)
-            UniqueDeviceIDManager.init(context)
 
             //check
             val isNotUFI = DeviceModelChecker.checkIsNotUFI(context)
@@ -33,7 +30,6 @@ class BootReceiver : BroadcastReceiver() {
 
             // 启动协程异步调用 suspend 函数
             CoroutineScope(Dispatchers.Default).launch {
-                UniqueDeviceIDManager.init(context)
                 val isUnSupportDevice = DeviceModelChecker.checkBlackList(context)
                 Log.d("UFI_TOOLS_LOG", "黑名单检测结果：$isUnSupportDevice")
 
@@ -51,14 +47,6 @@ class BootReceiver : BroadcastReceiver() {
             context.startForegroundService(startIntent)
             Log.d("UFI_TOOLS_LOG", "启动WebService")
 
-            val startIntent_ADB = Intent(context, ADBService::class.java)
-            startIntent_ADB.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startForegroundService(startIntent_ADB)
-            Log.d("UFI_TOOLS_LOG", "启动ADBService")
-
-            //激活网络ADB等
-            ShellKano.runADB(context)
-            Log.d("UFI_TOOLS_LOG", "激活网络ADB")
         }
     }
 }

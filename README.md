@@ -1,3 +1,14 @@
+# UFI-TOOLS 4.1.5 privacy fork
+
+This custom build is based on upstream commit `cf83b815efb114ed026f06dc90550845aafbfceb`.
+See [PRIVACY_BUILD.md](PRIVACY_BUILD.md) for changes, build instructions and limitations.
+Package: `com.minikano.f50_sms.privacy`; version: `4.1.5-privacy.1`.
+The separate package preserves any upstream app and its data. Updates are manual.
+The upstream README and MIT attribution below are retained as historical documentation;
+its automatic updates, plugins, reporting and advanced startup features do not describe this fork.
+
+---
+
 # 🧰 UFI-TOOLS
 
 > 一款面向某兴随身WIFI（F50/U30 Air）的多功能管理与扩展工具  
