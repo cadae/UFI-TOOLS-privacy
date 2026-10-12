@@ -70,8 +70,8 @@ class MainActivity : ComponentActivity() {
     private val PREF_ISDEBUG = "kano_is_debug"
     private val PREF_WAKELOCK = "wakeLock"
     private val serverStatusLiveData = MutableLiveData<Boolean>()
-    private val SERVER_INTENT = "${packageName}.SERVER_STATUS_CHANGED"
-    private val UI_INTENT = "${packageName}.UI_STATUS_CHANGED"
+    private val SERVER_INTENT get() = "${packageName}.SERVER_STATUS_CHANGED"
+    private val UI_INTENT get() = "${packageName}.UI_STATUS_CHANGED"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppMeta.init(this)

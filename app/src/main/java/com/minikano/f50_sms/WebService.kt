@@ -22,8 +22,8 @@ import kotlin.concurrent.thread
 class WebService : Service() {
     private var webServer: KanoWebServer? = null
     private val port = 2333
-    private val SERVER_INTENT = "${packageName}.SERVER_STATUS_CHANGED"
-    private val UI_INTENT = "${packageName}.UI_STATUS_CHANGED"
+    private val SERVER_INTENT get() = "${packageName}.SERVER_STATUS_CHANGED"
+    private val UI_INTENT get() = "${packageName}.UI_STATUS_CHANGED"
 
     @Volatile
     private var allowAutoStart = true

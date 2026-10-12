@@ -47,4 +47,6 @@ Privacy.2 regression checks verify reporting removal, restored ADB/feature gates
 
 Privacy.2 `assembleDebug` succeeded. Source regression checks and packaged frontend comparison (26 files) pass. Google aapt verifies appID, versionCode20261013 and launchable namespace class; apksigner verifies the existing RSA2048 Android Debug signer with APK v2 signing.
 
-APK SHA256: `8222d1b85d604b464c7d06388b2b8e64a9cf9c53445778f84aec279ad9d6e18f`. Signer certificate SHA256: `26e214d29355bf8eb6a7d865ad57acc3bfb5757f3f06f84b1187bca349f47296`.
+APK SHA256: `3add6dbd1477ae62bd11b19f9e7813628bc5efc11a4f589dbac863f6c8bda72a`. Signer certificate SHA256: `26e214d29355bf8eb6a7d865ad57acc3bfb5757f3f06f84b1187bca349f47296`.
+
+Startup broadcast names use lazy getters to respect Android Context attachment. Compiled constructor/getter checks verify this lifecycle fix; the failed initial startup receipt is retained locally.

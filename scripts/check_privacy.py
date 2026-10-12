@@ -24,6 +24,10 @@ for port in ('persist.service.adb.tcp.port 5555', 'service.adb.tcp.port 5555'):
     assert port in run_adb, port
 for unrelated in ('SAMBA_SETTING', 'SetUpgAutoSetting', 'RootShell', 'req.login', 'disableFota'):
     assert unrelated not in run_adb, unrelated
+for component in ('MainActivity.kt','WebService.kt'):
+    text=(JAVA/component).read_text()
+    assert 'private val SERVER_INTENT get()' in text and 'private val UI_INTENT get()' in text, component
+    assert 'private val SERVER_INTENT = "${packageName}' not in text, component
 for startup in ('MainActivity.kt','BootReceiver.kt'):
     assert 'ADBService::class.java' in (JAVA/startup).read_text()
 for prohibited in ('com.zte.zdmdaemon', 'pm uninstall -k --user 0'):
