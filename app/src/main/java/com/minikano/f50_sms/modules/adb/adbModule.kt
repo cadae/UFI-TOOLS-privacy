@@ -123,7 +123,7 @@ fun Route.adbModule(context: Context) {
                 }
             }
 
-            if (enabled) ShellKano.runADB(context.applicationContext)
+            ShellKano.runADB(context.applicationContext, persistOnBoot = enabled)
             context.startForegroundService(android.content.Intent(context, ADBService::class.java))
 
             // 响应

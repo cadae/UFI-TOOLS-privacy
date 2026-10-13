@@ -580,16 +580,15 @@ class ShellKano {
         }
 
 
-        // Explicitly authorized network ADB: no vendor login, FOTA or Samba side effects.
-        fun runADB(context: Context) {
+        // Automatic startup never changes persistence. Only the authenticated
+        // manual auto-start preference passes an explicit persistOnBoot choice.
+        fun runADB(context: Context, persistOnBoot: Boolean? = null) {
             Thread {
                 try {
-                    // adbd reads persist.adb.tcp.port during startup. The similarly
-                    // named persist.service.adb.tcp.port is not recognized by F50 adbd.
-                    // Request configuration only: never restart a shared daemon from
-                    // activity/boot startup or the reconnect watchdog.
-                    for (property in listOf("persist.adb.tcp.port", "service.adb.tcp.port")) {
-                        if (runShellCommand("/system/bin/setprop $property 5555") == null) {
+                    val runtimePort = runShellCommand("/system/bin/getprop service.adb.tcp.port")
+                    for ((property, value) in adbPortChanges(runtimePort, persistOnBoot)) {
+                        val argument = if (value.isEmpty()) "\"\"" else value
+                        if (runShellCommand("/system/bin/setprop $property $argument", escaped = true) == null) {
                             KanoLog.w("UFI_TOOLS_LOG", "Network ADB property request failed: $property")
                         }
                     }

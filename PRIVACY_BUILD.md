@@ -1,4 +1,4 @@
-# UFI-TOOLS 4.1.5 privacy.3
+# UFI-TOOLS 4.1.5 privacy.4
 
 Based on kanoqwq/UFI-TOOLS commit `cf83b815efb114ed026f06dc90550845aafbfceb` (http-server-version). Upstream author MiniKano and MIT attribution remain. This independent personal build is not a maintainer release or exhaustive security audit.
 
@@ -8,7 +8,7 @@ The app uses a bundled ADB client connected to `localhost:5555` on the F50. ADBS
 
 Privacy.2 restores ADBService/MainActivity/boot startup, connection tracking/watchdog, optional forwarding, data limits, saved schedules, AT/VoLTE settings, configured SMB maintenance, plugins, customization, backgrounds, themes and speed tests. Forwarding/data-limit flags default off, AT setters require saved per-slot flags, scheduled commands require existing user-created tasks, and recurring SMB work requires a pre-existing advanced socket/configuration. No settings are turned on to test these features. Iperf binds the existing private `192.168.0.1` address.
 
-`ShellKano.runADB()` now contains only the requested port5555 property writes. It no longer mixes network ADB with vendor update HTTP settings, Samba enabling or root wake fallback. Starting TCP adbd and authenticating the app client still depend on the device firmware. ADB security is not disabled, and keys/authorization are not bypassed. Persistent TCP ADB can listen on all device interfaces; firewall scope cannot be assumed. No router, forwarding or firewall changes are part of installation.
+`ShellKano.runADB()` follows the privacy.4 startup/manual policy below and adds no daemon restart. It no longer mixes network ADB with vendor update HTTP settings, Samba enabling or root wake fallback. Starting TCP adbd and authenticating the app client still depend on the device firmware. ADB security is not disabled, and keys/authorization are not bypassed. Persistent TCP ADB can listen on all device interfaces; firewall scope cannot be assumed. No router, forwarding or firewall changes are part of installation.
 
 ## Narrow privacy changes
 
@@ -25,7 +25,7 @@ Advanced/root functions remain ordinary manual functionality, but this setup doe
 
 ## Identity and signing
 
-Application ID `com.minikano.f50_sms.privacy`; namespace/classes `com.minikano.f50_sms`; version `4.1.5-privacy.3`; monotonic versionCode `20261014`. Separate package preserves upstream app data. Manifest components use their namespace class names, initializer/provider permissions use the privacy app ID, local broadcasts use runtime packageName and Kotlin file paths use context.filesDir. Bundled shell paths use the privacy app's directory; keepalive component uses privacy package plus original MainActivity class. Do not run both Web servers on port2333.
+Application ID `com.minikano.f50_sms.privacy`; namespace/classes `com.minikano.f50_sms`; version `4.1.5-privacy.4`; monotonic versionCode `20261015`. Separate package preserves upstream app data. Manifest components use their namespace class names, initializer/provider permissions use the privacy app ID, local broadcasts use runtime packageName and Kotlin file paths use context.filesDir. Bundled shell paths use the privacy app's directory; keepalive component uses privacy package plus original MainActivity class. Do not run both Web servers on port2333.
 
 Build uses the existing local Android debug keystore through normal Android Gradle debug signing. No key is copied, committed or uploaded. This is debug signing, not production-release signing; future updates need the same local identity.
 
@@ -41,7 +41,7 @@ cd ../..
 JAVA_HOME=/path/to/existing/jdk17 ANDROID_HOME=/path/to/sdk sh gradlew :app:assembleDebug --no-daemon
 ```
 
-Privacy.3 regression checks verify reporting removal, restored ADB/feature gates, separated ADB property helper, blocked automatic vendor/blanket grants, manual-removal guard, shell path migration, translations, script syntax and build identity. Check the APK with Google aapt/apksigner, compare packaged assets, and inspect all DEX files/selected methods before installation. The inherited arithmetic unit test is not privacy evidence. Local verification receipts contain build/APK and runtime evidence outside this source repository; no device backups, identifiers or signing secrets are published. No upstream PR is created.
+Privacy.4 regression checks verify reporting removal, restored ADB/feature gates, separated ADB property helper, blocked automatic vendor/blanket grants, manual-removal guard, shell path migration, translations, script syntax and build identity. Check the APK with Google aapt/apksigner, compare packaged assets, and inspect all DEX files/selected methods before installation. The inherited arithmetic unit test is not privacy evidence. Local verification receipts contain build/APK and runtime evidence outside this source repository; no device backups, identifiers or signing secrets are published. No upstream PR is created.
 
 ## Historical privacy.2 build result
 
@@ -51,7 +51,7 @@ APK SHA256: `3add6dbd1477ae62bd11b19f9e7813628bc5efc11a4f589dbac863f6c8bda72a`. 
 
 Startup broadcast names use lazy getters to respect Android Context attachment. Compiled constructor/getter checks verify this lifecycle fix; the failed initial startup receipt is retained locally.
 
-## Privacy.3 network ADB correction
+## Historical privacy.3 network ADB correction
 
 `runADB()` requests `persist.adb.tcp.port=5555`, the persistent property recognized by the installed F50 Android 13 adbd, and `service.adb.tcp.port=5555`. Failed property commands are now logged by property name without credentials. The old `persist.service.adb.tcp.port` property is not used or cleared. No authentication setting is changed.
 
@@ -59,10 +59,28 @@ The helper still does not restart adbd: activity/boot startup and reconnect retr
 
 Privacy.3 source checks cover recognized property names, visible command failures, preserved feature/privacy gates, and the absence of startup/watchdog daemon restart loops. Build, signing and device-install results must be recorded separately; the historical privacy.2 checks above do not verify this version.
 
-## Privacy.3 verified build and immediate repair
+## Historical privacy.3 verified build and immediate repair
 
 `check_privacy.py`, `testDebugUnitTest` and `assembleDebug` passed. APK v2 signing verifies with the same existing Android Debug signer as privacy.2. The package remains `com.minikano.f50_sms.privacy`, with versionCode20261014. Packaged frontend comparison passed for all 26 files; all 15 DEX files were checked for removed reporting symbols and the obsolete property name. The compiled ADB helper uses the recognized persistent/runtime property pair and contains no daemon restart, root or vendor configuration calls.
 
 APK SHA256: `3a46776f02f5aa73addc194b18c34da307d6bd580b0d808608a21b553bce8b67`.
 
 The approved one-time device repair set the recognized persistent property and restarted only adbd once. Port5555 then listened with `ro.adb.secure=1`; USB and the app's existing localhost transport were authorized. The same-signer APK was installed with `install -r`; package UID and preferences file inode/size/mtime remained unchanged without reading credentials. Web2333 remained healthy. No whole-device reboot was performed, so reboot persistence is not yet verified. Mac shared-server network ADB still reported `No route to host` despite a successful raw TCP connection; no Mac permissions, firewall or router settings were changed to address that separate limitation.
+
+## Privacy.4 preventive startup change
+
+Automatic boot/native startup now leaves `persist.adb.tcp.port` unchanged, even if an old auto-start preference is saved. It requests only the temporary `service.adb.tcp.port` when that port is missing; when the existing value is5555 it makes no property writes. Failed automatic property reads also leave the session alone. No daemon restart or connection reset is added.
+
+The authenticated manual Network ADB auto-start preference is distinct: an explicit enable writes the recognized persistent key; an explicit disable clears that key without closing the current temporary TCP session. The separate advanced firewall port controls retain their existing behavior. No manual setting is invoked by this update or its verification.
+
+Five targeted JVM regressions cover a working automatic session, absent temporary ports, failed automatic reads, explicit manual enable, and explicit manual disable. Source guards trace every automatic caller and prohibit alternate persistent-key writers or restart loops.
+
+The prior uptime resets remain unexplained: the F50 was already stable before the property rollback. This prevention does not establish their cause. No new reboot is part of privacy.4 verification, and future boot readiness is not claimed.
+
+## Privacy.4 verified build
+
+The five targeted `AdbPortPolicyTest` cases, source privacy/startup guards and `assembleDebug` passed. APK v2 signing verifies with the same existing Android Debug signer. All 26 frontend files match the packaged assets, all 15 DEX files pass the reporting/obsolete-property checks, and compiled boot/native callsites use the default null persistence choice. The compiled policy branches around persistence when that choice is null.
+
+APK SHA256: `19a4db8cbbd7b1f109c22d838305585777748c23573ea2b7f9848c5429d8c51e`.
+
+The same-signer privacy.4 APK was installed in place and its normal native activity launched. Across five read-only checks over approximately43 seconds, the recognized persistent key stayed empty, the temporary port stayed5555, adbd kept the same PID, and device uptime increased continuously. Both stock/UFI HTTP checks returned200, unauthenticated readiness API access stayed401, and the app's existing local transport stayed authorized. Both foreground services ran without current crash entries. Package UID and preferences inode/size/mtime stayed unchanged; credentials were not inspected. No device property writes, daemon restarts, reboots, root, firewall or vendor-package changes were performed for this preventive update. No manual persistence toggle was invoked.

@@ -19,20 +19,29 @@ assert 'sharedPrefs.getString("kano_data_flow_limit_enabled", "0") == "1"' in se
 assert 'enabledKeys.none' in service
 assert 'File(applicationContext.filesDir, "kano_root_shell.sock").exists()' in service
 shell = (JAVA/'utils/ShellKano.kt').read_text()
-run_adb = shell.split('fun runADB(context: Context)',1)[1].split('fun openSMB',1)[0]
-assert 'listOf("persist.adb.tcp.port", "service.adb.tcp.port")' in run_adb
-assert 'setprop $property 5555' in run_adb
-assert 'persist.service.adb.tcp.port' not in '\n'.join(
-    line for line in all_java.splitlines() if not line.strip().startswith('//'))
+run_adb = shell.split('fun runADB(',1)[1].split('fun openSMB',1)[0]
+assert 'persistOnBoot: Boolean? = null' in run_adb
+assert 'getprop service.adb.tcp.port' in run_adb
+assert 'adbPortChanges(runtimePort, persistOnBoot)' in run_adb
+assert 'setprop $property $argument\", escaped = true' in run_adb
 assert '== null' in run_adb and 'Network ADB property request failed: $property' in run_adb
-# Startup and watchdog must configure/probe without daemon restart loops.
+policy = (JAVA/'utils/AdbPortPolicy.kt').read_text()
+assert 'if (persistOnBoot != null)' in policy
+assert '"persist.adb.tcp.port" to if (persistOnBoot) "5555" else ""' in policy
+assert 'persist.service.adb.tcp.port' not in all_java
+# No other Kotlin helper can reintroduce the persistent key on startup.
+assert all_java.count('"persist.adb.tcp.port"') == 1
+for startup in ('MainActivity.kt', 'BootReceiver.kt'):
+    text = (JAVA/startup).read_text()
+    assert 'persistOnBoot' not in text and 'persist.adb.tcp.port' not in text
+    calls = re.findall(r'ShellKano\.runADB\(([^)]*)\)', text)
+    assert calls and all(',' not in args for args in calls), startup
 for restart in ('restart adbd', 'stop adbd', 'start adbd', 'tcpip', 'kill-server'):
     assert restart not in run_adb, restart
     assert restart not in service, restart
-# Auto-start disable changes its preference only; advanced port buttons are
-# separate firewall controls and must not acquire property/daemon side effects.
+# Only the explicit, authenticated manual setting supplies a persistence choice.
 adb_module = (JAVA/'modules/adb/adbModule.kt').read_text()
-assert 'if (enabled) ShellKano.runADB(context.applicationContext)' in adb_module
+assert 'ShellKano.runADB(context.applicationContext, persistOnBoot = enabled)' in adb_module
 assert 'putString("ADB_IP_ENABLED", "false")' in adb_module
 assert 'setprop' not in adb_module
 for unrelated in ('SAMBA_SETTING', 'SetUpgAutoSetting', 'RootShell', 'req.login', 'disableFota'):
@@ -75,6 +84,9 @@ for removed in ('api.kanokano.cn','initMessage','/device_id','/check_update','/d
     assert removed not in js, removed
 assert "if (localStorage.getItem('privacy_load_custom_head') === 'true')" in js
 assert 'getCustomHead().then' in js
+adb_network_ui = js.split('let handlerADBNetworkStatus = async () => {', 1)[1]
+assert adb_network_ui.index('btn.onclick = async () =>') < adb_network_ui.index("method: 'POST'")
+assert "method: 'GET'" in adb_network_ui[:adb_network_ui.index('btn.onclick = async () =>')]
 manual = js.split('const handleDisableFOTA = async () => {',1)[1].split('const ',1)[0]
 assert js.index("!== 'UNINSTALL'") < js.index('runShellWithRoot("pm disable')
 assert 'privacy_vendor_removal_confirm' in js
@@ -86,5 +98,5 @@ props = (ROOT/'gradle/wrapper/gradle-wrapper.properties').read_text()
 assert 'distributionSha256Sum=d725d707bfabd4dfdc958c624003b3c80accc03f7037b5122c4b1d0ef15cecab' in props
 build = (ROOT/'app/build.gradle.kts').read_text()
 assert 'applicationId = "com.minikano.f50_sms.privacy"' in build
-assert 'versionName = "4.1.5-privacy.3"' in build
-print('Privacy.3 regressions passed: reporting/vendor removal absent; local ADB and settings-gated features preserved; no blanket grants.')
+assert 'versionName = "4.1.5-privacy.4"' in build
+print('Privacy.4 regressions passed: reporting/vendor removal absent; local ADB and settings-gated features preserved; no blanket grants.')

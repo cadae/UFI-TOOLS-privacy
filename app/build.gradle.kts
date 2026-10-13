@@ -50,8 +50,8 @@ android {
         minSdk = 26
         targetSdk = 33
         // Fixed identity for this reviewed privacy fork.
-        versionCode = 20261014
-        versionName = "4.1.5-privacy.3"
+        versionCode = 20261015
+        versionName = "4.1.5-privacy.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
