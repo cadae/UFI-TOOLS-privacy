@@ -584,8 +584,15 @@ class ShellKano {
         fun runADB(context: Context) {
             Thread {
                 try {
-                    runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
-                    runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
+                    // adbd reads persist.adb.tcp.port during startup. The similarly
+                    // named persist.service.adb.tcp.port is not recognized by F50 adbd.
+                    // Request configuration only: never restart a shared daemon from
+                    // activity/boot startup or the reconnect watchdog.
+                    for (property in listOf("persist.adb.tcp.port", "service.adb.tcp.port")) {
+                        if (runShellCommand("/system/bin/setprop $property 5555") == null) {
+                            KanoLog.w("UFI_TOOLS_LOG", "Network ADB property request failed: $property")
+                        }
+                    }
                 } catch (e: Exception) {
                     KanoLog.w("UFI_TOOLS_LOG", "Network ADB property request failed: ${e.message}")
                 }

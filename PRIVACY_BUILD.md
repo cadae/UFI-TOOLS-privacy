@@ -1,4 +1,4 @@
-# UFI-TOOLS 4.1.5 privacy.2
+# UFI-TOOLS 4.1.5 privacy.3
 
 Based on kanoqwq/UFI-TOOLS commit `cf83b815efb114ed026f06dc90550845aafbfceb` (http-server-version). Upstream author MiniKano and MIT attribution remain. This independent personal build is not a maintainer release or exhaustive security audit.
 
@@ -25,7 +25,7 @@ Advanced/root functions remain ordinary manual functionality, but this setup doe
 
 ## Identity and signing
 
-Application ID `com.minikano.f50_sms.privacy`; namespace/classes `com.minikano.f50_sms`; version `4.1.5-privacy.2`; monotonic versionCode `20261013`. Separate package preserves upstream app data. Manifest components use their namespace class names, initializer/provider permissions use the privacy app ID, local broadcasts use runtime packageName and Kotlin file paths use context.filesDir. Bundled shell paths use the privacy app's directory; keepalive component uses privacy package plus original MainActivity class. Do not run both Web servers on port2333.
+Application ID `com.minikano.f50_sms.privacy`; namespace/classes `com.minikano.f50_sms`; version `4.1.5-privacy.3`; monotonic versionCode `20261014`. Separate package preserves upstream app data. Manifest components use their namespace class names, initializer/provider permissions use the privacy app ID, local broadcasts use runtime packageName and Kotlin file paths use context.filesDir. Bundled shell paths use the privacy app's directory; keepalive component uses privacy package plus original MainActivity class. Do not run both Web servers on port2333.
 
 Build uses the existing local Android debug keystore through normal Android Gradle debug signing. No key is copied, committed or uploaded. This is debug signing, not production-release signing; future updates need the same local identity.
 
@@ -41,12 +41,28 @@ cd ../..
 JAVA_HOME=/path/to/existing/jdk17 ANDROID_HOME=/path/to/sdk sh gradlew :app:assembleDebug --no-daemon
 ```
 
-Privacy.2 regression checks verify reporting removal, restored ADB/feature gates, separated ADB property helper, blocked automatic vendor/blanket grants, manual-removal guard, shell path migration, translations, script syntax and build identity. Check the APK with Google aapt/apksigner, compare packaged assets, and inspect all DEX files/selected methods before installation. The inherited arithmetic unit test is not privacy evidence. Local verification receipts contain build/APK and runtime evidence outside this source repository; no device backups, identifiers or signing secrets are published. No upstream PR is created.
+Privacy.3 regression checks verify reporting removal, restored ADB/feature gates, separated ADB property helper, blocked automatic vendor/blanket grants, manual-removal guard, shell path migration, translations, script syntax and build identity. Check the APK with Google aapt/apksigner, compare packaged assets, and inspect all DEX files/selected methods before installation. The inherited arithmetic unit test is not privacy evidence. Local verification receipts contain build/APK and runtime evidence outside this source repository; no device backups, identifiers or signing secrets are published. No upstream PR is created.
 
-## Static build result
+## Historical privacy.2 build result
 
 Privacy.2 `assembleDebug` succeeded. Source regression checks and packaged frontend comparison (26 files) pass. Google aapt verifies appID, versionCode20261013 and launchable namespace class; apksigner verifies the existing RSA2048 Android Debug signer with APK v2 signing.
 
 APK SHA256: `3add6dbd1477ae62bd11b19f9e7813628bc5efc11a4f589dbac863f6c8bda72a`. Signer certificate SHA256: `26e214d29355bf8eb6a7d865ad57acc3bfb5757f3f06f84b1187bca349f47296`.
 
 Startup broadcast names use lazy getters to respect Android Context attachment. Compiled constructor/getter checks verify this lifecycle fix; the failed initial startup receipt is retained locally.
+
+## Privacy.3 network ADB correction
+
+`runADB()` requests `persist.adb.tcp.port=5555`, the persistent property recognized by the installed F50 Android 13 adbd, and `service.adb.tcp.port=5555`. Failed property commands are now logged by property name without credentials. The old `persist.service.adb.tcp.port` property is not used or cleared. No authentication setting is changed.
+
+The helper still does not restart adbd: activity/boot startup and reconnect retries must not interrupt shared USB/network transports. Applying these settings after adbd has started may require a separately approved one-time daemon restart. Persistence across reboot is unverified until an actual reboot test. The auto-start preference toggle and manual advanced firewall port controls keep their existing semantics; this change adds no disable-time firewall or daemon operations.
+
+Privacy.3 source checks cover recognized property names, visible command failures, preserved feature/privacy gates, and the absence of startup/watchdog daemon restart loops. Build, signing and device-install results must be recorded separately; the historical privacy.2 checks above do not verify this version.
+
+## Privacy.3 verified build and immediate repair
+
+`check_privacy.py`, `testDebugUnitTest` and `assembleDebug` passed. APK v2 signing verifies with the same existing Android Debug signer as privacy.2. The package remains `com.minikano.f50_sms.privacy`, with versionCode20261014. Packaged frontend comparison passed for all 26 files; all 15 DEX files were checked for removed reporting symbols and the obsolete property name. The compiled ADB helper uses the recognized persistent/runtime property pair and contains no daemon restart, root or vendor configuration calls.
+
+APK SHA256: `3a46776f02f5aa73addc194b18c34da307d6bd580b0d808608a21b553bce8b67`.
+
+The approved one-time device repair set the recognized persistent property and restarted only adbd once. Port5555 then listened with `ro.adb.secure=1`; USB and the app's existing localhost transport were authorized. The same-signer APK was installed with `install -r`; package UID and preferences file inode/size/mtime remained unchanged without reading credentials. Web2333 remained healthy. No whole-device reboot was performed, so reboot persistence is not yet verified. Mac shared-server network ADB still reported `No route to host` despite a successful raw TCP connection; no Mac permissions, firewall or router settings were changed to address that separate limitation.

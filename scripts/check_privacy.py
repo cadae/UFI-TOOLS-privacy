@@ -20,8 +20,21 @@ assert 'enabledKeys.none' in service
 assert 'File(applicationContext.filesDir, "kano_root_shell.sock").exists()' in service
 shell = (JAVA/'utils/ShellKano.kt').read_text()
 run_adb = shell.split('fun runADB(context: Context)',1)[1].split('fun openSMB',1)[0]
-for port in ('persist.service.adb.tcp.port 5555', 'service.adb.tcp.port 5555'):
-    assert port in run_adb, port
+assert 'listOf("persist.adb.tcp.port", "service.adb.tcp.port")' in run_adb
+assert 'setprop $property 5555' in run_adb
+assert 'persist.service.adb.tcp.port' not in '\n'.join(
+    line for line in all_java.splitlines() if not line.strip().startswith('//'))
+assert '== null' in run_adb and 'Network ADB property request failed: $property' in run_adb
+# Startup and watchdog must configure/probe without daemon restart loops.
+for restart in ('restart adbd', 'stop adbd', 'start adbd', 'tcpip', 'kill-server'):
+    assert restart not in run_adb, restart
+    assert restart not in service, restart
+# Auto-start disable changes its preference only; advanced port buttons are
+# separate firewall controls and must not acquire property/daemon side effects.
+adb_module = (JAVA/'modules/adb/adbModule.kt').read_text()
+assert 'if (enabled) ShellKano.runADB(context.applicationContext)' in adb_module
+assert 'putString("ADB_IP_ENABLED", "false")' in adb_module
+assert 'setprop' not in adb_module
 for unrelated in ('SAMBA_SETTING', 'SetUpgAutoSetting', 'RootShell', 'req.login', 'disableFota'):
     assert unrelated not in run_adb, unrelated
 for component in ('MainActivity.kt','WebService.kt'):
@@ -73,5 +86,5 @@ props = (ROOT/'gradle/wrapper/gradle-wrapper.properties').read_text()
 assert 'distributionSha256Sum=d725d707bfabd4dfdc958c624003b3c80accc03f7037b5122c4b1d0ef15cecab' in props
 build = (ROOT/'app/build.gradle.kts').read_text()
 assert 'applicationId = "com.minikano.f50_sms.privacy"' in build
-assert 'versionName = "4.1.5-privacy.2"' in build
-print('Privacy.2 regressions passed: reporting/vendor removal absent; local ADB and settings-gated features preserved; no blanket grants.')
+assert 'versionName = "4.1.5-privacy.3"' in build
+print('Privacy.3 regressions passed: reporting/vendor removal absent; local ADB and settings-gated features preserved; no blanket grants.')
